@@ -24,17 +24,6 @@
 #include "trace.h"
 #include "pmu.h"
 
-long int total_exits = 0;
-long int total_cycles = 0 ;
-long int total_exit_counter[67] = {};
-long int total_cycle_counter[67] = {};
-//struct info_exit info_exits[67] = {};
-
-EXPORT_SYMBOL(total_exits);
-EXPORT_SYMBOL(total_exit_counter);
-EXPORT_SYMBOL(total_cycle_counter);
-EXPORT_SYMBOL(total_cycles);
-
 static u32 xstate_required_size(u64 xstate_bv, bool compacted)
 {
 	int feature_bit = 0;
@@ -1054,51 +1043,10 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 
 	if (cpuid_fault_enabled(vcpu) && !kvm_require_cpl(vcpu, 0))
 		return 1;
-	
+
 	eax = kvm_rax_read(vcpu);
 	ecx = kvm_rcx_read(vcpu);
-//	int i=0;
-	if(eax == 0x4FFFFFFF)
-	{
-		eax = total_exits;
-		printk("Total exits are: %ld", total_exits);
-	}
-
-	else if(eax == 0x4FFFFFFE)
-	{
-		ebx = total_cycles;
-		ecx = total_cycles;
-		printk("Total cpu cycles are: ", total_cycles);
-	}
-	else if(eax == 0x4FFFFFFD)
-	{
-		if(ecx==3 || ecx == 4 || ecx == 5 || ecx == 6 || ecx == 11 || ecx == 16 || ecx == 17 || ecx == 33 || ecx == 34) {
-			eax = 0;
-			ebx = 0;
-			ecx = 0;
-			edx = 0;
-			}
-//		else if(ecx == 35 || ecx == 38 || ecx == 42 || ecx == "EXIT_REASON_UMWAIT" || ecx == "EXIT_REASON_TPAUSE") {
-//			eax = 0;
-//			ebx = 0;		
-//			ecx = 0;
-//			edx = 0xFFFFFFFFF;
-		
-		else 
-		{
-		eax = total_exit_counter[ecx];
-		}
-			
-	}
-
-
-	else if(eax == 0x4FFFFFFF) {
-
-	}		
-	else	
-	{
 	kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, true);
-	}	
 	kvm_rax_write(vcpu, eax);
 	kvm_rbx_write(vcpu, ebx);
 	kvm_rcx_write(vcpu, ecx);
