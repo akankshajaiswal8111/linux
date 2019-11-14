@@ -24,17 +24,18 @@
 #include "trace.h"
 #include "pmu.h"
 
-long int total_exits = 0;
+long total_exits = 0;
 long int total_cycles = 0 ;
-long int total_exit_counter[67] = {};
-long int total_cycle_counter[67] = {};
+u32 total_exit_counter[67] = {0};
+long total_cycle_counter[67] = {};
+//u32 exit_reason;
 //struct info_exit info_exits[67] = {};
 
 EXPORT_SYMBOL(total_exits);
 EXPORT_SYMBOL(total_exit_counter);
 EXPORT_SYMBOL(total_cycle_counter);
 EXPORT_SYMBOL(total_cycles);
-
+//EXPORT_SYMBOL(exit_reason);
 static u32 xstate_required_size(u64 xstate_bv, bool compacted)
 {
 	int feature_bit = 0;
@@ -1066,9 +1067,9 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 
 	else if(eax == 0x4FFFFFFE)
 	{
-		ebx = total_cycles;
-		ecx = total_cycles;
-		printk("Total cpu cycles are: ", total_cycles);
+		ecx = (total_cycles & 0x00000000ffffffff);
+		ebx = (total_cycles & 0xffffffff00000000) >> 32;
+		printk("Total cpu cycles are: %ld", total_cycles);
 	}
 	else if(eax == 0x4FFFFFFD)
 	{
@@ -1086,7 +1087,11 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 		
 		else 
 		{
-		eax = total_exit_counter[ecx];
+			 
+			printk("ecx = %ld", ecx);
+			eax = total_exit_counter[ecx];
+			
+			
 		}
 			
 	}

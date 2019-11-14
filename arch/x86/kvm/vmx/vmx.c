@@ -64,13 +64,14 @@
 MODULE_AUTHOR("Qumranet");
 MODULE_LICENSE("GPL");
 
-extern long int total_exits;
+extern long total_exits;
+extern u64 total_cycles;
 
-extern long int total_cycles;
-
-
-extern long total_exit_counter[67];
+extern u32 total_exit_counter[67];
 extern long total_cycle_counter[67];
+//u32 exit_reason;
+
+
 
 //static struct info_exit {
 //	u64 total_exits;
@@ -4621,6 +4622,7 @@ static int handle_machine_check(struct kvm_vcpu *vcpu)
 
 static int handle_exception_nmi(struct kvm_vcpu *vcpu)
 {
+	//total_exit_counter[0]++;
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
 	struct kvm_run *kvm_run = vcpu->run;
 	u32 intr_info, ex_no, error_code;
@@ -4732,7 +4734,7 @@ static int handle_external_interrupt(struct kvm_vcpu *vcpu)
 
 static int handle_triple_fault(struct kvm_vcpu *vcpu)
 {
-	total_exit_counter[2]++;
+	//total_exit_counter[2]++;
 	vcpu->run->exit_reason = KVM_EXIT_SHUTDOWN;
 	vcpu->mmio_needed = 0;
 	return 0;
@@ -4740,7 +4742,7 @@ static int handle_triple_fault(struct kvm_vcpu *vcpu)
 
 static int handle_io(struct kvm_vcpu *vcpu)
 {
-	total_exit_counter[30]++;
+	//total_exit_counter[30]++;
 	unsigned long exit_qualification;
 	int size, in, string;
 	unsigned port;
@@ -5897,7 +5899,7 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 	
 
 	trace_kvm_exit(exit_reason, vcpu, KVM_ISA_VMX);
-
+	
 	/*
 	 * Flush logged GPAs PML buffer, this will make dirty_bitmap more
 	 * updated. Another good is, in kvm_vm_ioctl_get_dirty_log, before
@@ -5986,8 +5988,13 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 		this_exit_cycles = after_exit - before_exit;
 
 		total_cycles = total_cycles + this_exit_cycles;
+		
+		//printk("Total exit in vmx=%ld, exit_reason= %ld", exit_reason, total_exit_counter[exit_reason]);
 
 		total_exit_counter[exit_reason]++;
+		
+		printk("Total exit in vmx=%ld", exit_reason);
+
 		total_cycle_counter[exit_reason] = total_cycle_counter[exit_reason] + this_exit_cycles;
 
 		return return_val;
