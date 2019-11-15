@@ -67,13 +67,13 @@ MODULE_LICENSE("GPL");
 //extern long total_exits;
 //extern u64 total_cycles;
 
-extern atomic_t u32 total_exit_counter[67];
-extern atomic_t u64 total_cycle_counter[67];
+//extern atomic_t u32 total_exit_counter[67];
+//extern atomic_t u64 total_cycle_counter[67];
 extern atomic_t *total_exits;
 extern atomic64_t *total_cycles;
 
-//extern u64 total_exit_counter[67];
-//extern u64 total_cycle_counter[67];
+extern u64 total_exit_counter[67];
+extern u64 total_cycle_counter[67];
 //u32 exit_reason;
 
 
