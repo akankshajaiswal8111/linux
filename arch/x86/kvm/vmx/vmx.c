@@ -64,11 +64,16 @@
 MODULE_AUTHOR("Qumranet");
 MODULE_LICENSE("GPL");
 
-extern long total_exits;
-extern u64 total_cycles;
+//extern long total_exits;
+//extern u64 total_cycles;
 
-extern u32 total_exit_counter[67];
-extern long total_cycle_counter[67];
+extern atomic_t u32 total_exit_counter[67];
+extern atomic_t u64 total_cycle_counter[67];
+extern atomic_t *total_exits;
+extern atomic64_t *total_cycles;
+
+//extern u64 total_exit_counter[67];
+//extern u64 total_cycle_counter[67];
 //u32 exit_reason;
 
 
@@ -5981,21 +5986,24 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 	if (exit_reason < kvm_vmx_max_exit_handlers
 	    && kvm_vmx_exit_handlers[exit_reason])
 	{
-		total_exits = total_exits+1;
+		//total_exits = total_exits+1;
+		atomic_add(1,total_exits);
 		before_exit = rdtsc();
 	        return_val = kvm_vmx_exit_handlers[exit_reason](vcpu);
       		after_exit = rdtsc();
 		this_exit_cycles = after_exit - before_exit;
 
-		total_cycles = total_cycles + this_exit_cycles;
-		
-		//printk("Total exit in vmx=%ld, exit_reason= %ld", exit_reason, total_exit_counter[exit_reason]);
+		//total_cycles = total_cycles + this_exit_cycles;
+		atomic64_add(this_exit_cycles,total_cycles);
+		//printk("Total exit in vmx=%ld, exit_reason= %u", exit_reason, total_exit_counter[exit_reason]);
 
 		total_exit_counter[exit_reason]++;
+		//atomic_add(1,total_exit_counter[exit_reason]);
 		
-		printk("Total exit in vmx=%ld", exit_reason);
+		//printk("Total exit in vmx=%u, exit count reason=%ld", total_exit_counter[exit_reason], exit_reason);
 
 		total_cycle_counter[exit_reason] = total_cycle_counter[exit_reason] + this_exit_cycles;
+		//atomic_add(this_exit_cycles,total_cycle_counter[exit_reason]);
 
 		return return_val;
 	}

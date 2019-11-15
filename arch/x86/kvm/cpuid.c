@@ -25,9 +25,9 @@
 #include "pmu.h"
 
 long total_exits = 0;
-long int total_cycles = 0 ;
+u64 total_cycles = 0 ;
 u32 total_exit_counter[67] = {0};
-long total_cycle_counter[67] = {};
+u64 total_cycle_counter[67] = {};
 //u32 exit_reason;
 //struct info_exit info_exits[67] = {};
 
@@ -1063,43 +1063,103 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	{
 		eax = total_exits;
 		printk("Total exits are: %ld", total_exits);
+		ebx=0;
+		ecx=0;
+		edx=0;
 	}
 
 	else if(eax == 0x4FFFFFFE)
 	{
 		ecx = (total_cycles & 0x00000000ffffffff);
 		ebx = (total_cycles & 0xffffffff00000000) >> 32;
+		edx = 0;
+		eax = 0;
 		printk("Total cpu cycles are: %ld", total_cycles);
 	}
 	else if(eax == 0x4FFFFFFD)
 	{
-		if(ecx==3 || ecx == 4 || ecx == 5 || ecx == 6 || ecx == 11 || ecx == 16 || ecx == 17 || ecx == 33 || ecx == 34) {
+		if(ecx == 3 || ecx == 4 || ecx == 5 || ecx == 6 || ecx == 11 || ecx == 16 || ecx == 17 || ecx == 33 || ecx == 34) {
 			eax = 0;
 			ebx = 0;
 			ecx = 0;
 			edx = 0;
-			}
-//		else if(ecx == 35 || ecx == 38 || ecx == 42 || ecx == "EXIT_REASON_UMWAIT" || ecx == "EXIT_REASON_TPAUSE") {
-//			eax = 0;
-//			ebx = 0;		
-//			ecx = 0;
-//			edx = 0xFFFFFFFFF;
-		
-		else 
-		{
-			 
-			printk("ecx = %ld", ecx);
-			eax = total_exit_counter[ecx];
-			
-			
 		}
+		else if(ecx == 35 || ecx == 38 || ecx == 42 || ecx == 67 || ecx == 68) {
+			eax = 0;
+			ebx = 0;		
+			ecx = 0;
+			edx = 0xFFFFFFFF;
+		}
+
+		
+		else {
+		 int i = 0 ;
+		 int flag = -1;
+		 for (i = 0; i < 67; i++) {
+			if ( ecx == i ) {
+				flag = 1;
+			}
+		 }
+			if ( flag == 1 ) {
+				printk("ecx = %ld", ecx);
+				eax = total_exit_counter[ecx];
+				ebx = 0;
+				ecx = 0;
+				edx = 0;
+			}
+			else {
+				eax = 0;
+				ebx = 0;		
+				ecx = 0;
+				edx = 0xFFFFFFFF;	 
+			}
+			
+		} 
+		
+
 			
 	}
 
 
 	else if(eax == 0x4FFFFFFF) {
+if(ecx == 3 || ecx == 4 || ecx == 5 || ecx == 6 || ecx == 11 || ecx == 16 || ecx == 17 || ecx == 33 || ecx == 34) {
+			eax = 0;
+			ebx = 0;
+			ecx = 0;
+			edx = 0;
+		}
+		else if(ecx == 35 || ecx == 38 || ecx == 42 || ecx == 67 || ecx == 68) {
+			eax = 0;
+			ebx = 0;		
+			ecx = 0;
+			edx = 0xFFFFFFFF;
+		}
 
-	}		
+		
+		else {
+		 int i = 0 ;
+		 int flag = -1;
+		 for (i = 0; i < 67; i++) {
+			if ( ecx == i ) {
+				flag = 1;
+			}
+		 }
+			if ( flag == 1 ) {
+				printk("ecx = %ld", ecx);
+				eax = total_cycle_counter[ecx];
+				ebx = 0;
+				ecx = 0;
+				edx = 0;
+			}
+			else {
+				eax = 0;
+				ebx = 0;		
+				ecx = 0;
+				edx = 0xFFFFFFFF;	 
+			}
+			
+		} 
+}		
 	else	
 	{
 	kvm_cpuid(vcpu, &eax, &ebx, &ecx, &edx, true);
