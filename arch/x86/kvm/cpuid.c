@@ -24,18 +24,20 @@
 #include "trace.h"
 #include "pmu.h"
 
-long total_exits = 0;
-u64 total_cycles = 0 ;
-u32 total_exit_counter[67] = {0};
-u64 total_cycle_counter[67] = {};
-//u32 exit_reason;
-//struct info_exit info_exits[67] = {};
+atomic_t total_exits=ATOMIC_INIT(0);
+atomic64_t total_cycles = ATOMIC_INIT(0);
+atomic_t total_exit_counter[67] = {ATOMIC_INIT(0)};
+u64 total_cycle_counter[67] = {0};
+
+//u64 total_cycles = 0 ;
+//u32 total_exit_counter[67] = {0};
+
 
 EXPORT_SYMBOL(total_exits);
 EXPORT_SYMBOL(total_exit_counter);
 EXPORT_SYMBOL(total_cycle_counter);
 EXPORT_SYMBOL(total_cycles);
-//EXPORT_SYMBOL(exit_reason);
+
 static u32 xstate_required_size(u64 xstate_bv, bool compacted)
 {
 	int feature_bit = 0;
@@ -1061,7 +1063,7 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 //	int i=0;
 	if(eax == 0x4FFFFFFF)
 	{
-		eax = total_exits;
+		eax = atomic_read(&total_exits);
 		printk("Total exits are: %ld", total_exits);
 		ebx=0;
 		ecx=0;
@@ -1070,11 +1072,12 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 
 	else if(eax == 0x4FFFFFFE)
 	{
-		ecx = (total_cycles & 0x00000000ffffffff);
-		ebx = (total_cycles & 0xffffffff00000000) >> 32;
+		u64 curr_total_cycles=atomic64_read(&total_cycles);
+		ecx = curr_total_cycles & 0x00000000ffffffff;
+		ebx = (curr_total_cycles & 0xffffffff00000000) >> 32;
 		edx = 0;
 		eax = 0;
-		printk("Total cpu cycles are: %ld", total_cycles);
+		printk("Total cpu cycles are: %ld", curr_total_cycles);
 	}
 	else if(eax == 0x4FFFFFFD)
 	{
@@ -1101,8 +1104,9 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 			}
 		 }
 			if ( flag == 1 ) {
-				printk("ecx = %ld", ecx);
-				eax = total_exit_counter[ecx];
+				//printk("ecx = %ld", ecx);
+				eax = atomic_read(&total_exit_counter[ecx]);
+				printk("Total exit counter per exit %ld is %u", ecx, total_exit_counter[ecx]);
 				ebx = 0;
 				ecx = 0;
 				edx = 0;

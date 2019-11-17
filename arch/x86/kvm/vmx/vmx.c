@@ -27,6 +27,7 @@
 #include <linux/slab.h>
 #include <linux/tboot.h>
 #include <linux/trace_events.h>
+#include <linux/mutex.h>
 
 #include <asm/apic.h>
 #include <asm/asm.h>
@@ -61,37 +62,21 @@
 #include "vmx.h"
 #include "x86.h"
 
+
 MODULE_AUTHOR("Qumranet");
 MODULE_LICENSE("GPL");
 
-//extern long total_exits;
+//extern int total_exits;
 //extern u64 total_cycles;
-
-//extern atomic_t u32 total_exit_counter[67];
-//extern atomic_t u64 total_cycle_counter[67];
-extern atomic_t *total_exits;
-extern atomic64_t *total_cycles;
-
-extern u64 total_exit_counter[67];
+//extern u64 total_exit_counter[67];
 extern u64 total_cycle_counter[67];
-//u32 exit_reason;
 
 
+extern atomic_t total_exit_counter[67];
+//extern atomic64_t total_cycle_counter[67];
+extern atomic_t total_exits;
+extern atomic64_t total_cycles;
 
-//static struct info_exit {
-//	u64 total_exits;
-//	u64 total_cycles;
-//}; 
-
-//static void initiate_exit_values(void) {
-//	int i = 0;
-//	for (i = 0; i < 67; i++) {
-//		info_exits[i].total_exits=0;
-//		info_exits[i].total_cycles=0;
-//	}
-//}
-
-//extern struct info_exit info_exits[67];
 
 static const struct x86_cpu_id vmx_cpu_id[] = {
 	X86_FEATURE_MATCH(X86_FEATURE_VMX),
@@ -4627,7 +4612,7 @@ static int handle_machine_check(struct kvm_vcpu *vcpu)
 
 static int handle_exception_nmi(struct kvm_vcpu *vcpu)
 {
-	//total_exit_counter[0]++;
+	
 	struct vcpu_vmx *vmx = to_vmx(vcpu);
 	struct kvm_run *kvm_run = vcpu->run;
 	u32 intr_info, ex_no, error_code;
@@ -4739,7 +4724,7 @@ static int handle_external_interrupt(struct kvm_vcpu *vcpu)
 
 static int handle_triple_fault(struct kvm_vcpu *vcpu)
 {
-	//total_exit_counter[2]++;
+	
 	vcpu->run->exit_reason = KVM_EXIT_SHUTDOWN;
 	vcpu->mmio_needed = 0;
 	return 0;
@@ -4747,7 +4732,7 @@ static int handle_triple_fault(struct kvm_vcpu *vcpu)
 
 static int handle_io(struct kvm_vcpu *vcpu)
 {
-	//total_exit_counter[30]++;
+	
 	unsigned long exit_qualification;
 	int size, in, string;
 	unsigned port;
@@ -5986,21 +5971,28 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 	if (exit_reason < kvm_vmx_max_exit_handlers
 	    && kvm_vmx_exit_handlers[exit_reason])
 	{
+		
 		//total_exits = total_exits+1;
-		atomic_add(1,total_exits);
+		atomic_inc(&total_exits);
+
+
 		before_exit = rdtsc();
 	        return_val = kvm_vmx_exit_handlers[exit_reason](vcpu);
       		after_exit = rdtsc();
 		this_exit_cycles = after_exit - before_exit;
 
 		//total_cycles = total_cycles + this_exit_cycles;
-		atomic64_add(this_exit_cycles,total_cycles);
+		atomic64_add(this_exit_cycles,&total_cycles);
+		
 		//printk("Total exit in vmx=%ld, exit_reason= %u", exit_reason, total_exit_counter[exit_reason]);
 
-		total_exit_counter[exit_reason]++;
-		//atomic_add(1,total_exit_counter[exit_reason]);
+		
+		//total_exit_counter[exit_reason]++;
+		atomic_inc(&total_exit_counter[exit_reason]);
+		
 		
 		//printk("Total exit in vmx=%u, exit count reason=%ld", total_exit_counter[exit_reason], exit_reason);
+		
 
 		total_cycle_counter[exit_reason] = total_cycle_counter[exit_reason] + this_exit_cycles;
 		//atomic_add(this_exit_cycles,total_cycle_counter[exit_reason]);
