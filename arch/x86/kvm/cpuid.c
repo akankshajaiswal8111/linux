@@ -27,7 +27,7 @@
 atomic_t total_exits=ATOMIC_INIT(0);
 atomic64_t total_cycles = ATOMIC_INIT(0);
 atomic_t total_exit_counter[67] = {ATOMIC_INIT(0)};
-u64 total_cycle_counter[67] = {0};
+atomic64_t total_cycle_counter[67] = {ATOMIC_INIT(0)};
 
 //u64 total_cycles = 0 ;
 //u32 total_exit_counter[67] = {0};
@@ -1125,8 +1125,8 @@ int kvm_emulate_cpuid(struct kvm_vcpu *vcpu)
 	}
 
 
-	else if(eax == 0x4FFFFFFF) {
-if(ecx == 3 || ecx == 4 || ecx == 5 || ecx == 6 || ecx == 11 || ecx == 16 || ecx == 17 || ecx == 33 || ecx == 34) {
+	else if(eax == 0x4FFFFFFC) {
+		if(ecx == 3 || ecx == 4 || ecx == 5 || ecx == 6 || ecx == 11 || ecx == 16 || ecx == 17 || ecx == 33 || ecx == 34) {
 			eax = 0;
 			ebx = 0;
 			ecx = 0;
@@ -1149,11 +1149,12 @@ if(ecx == 3 || ecx == 4 || ecx == 5 || ecx == 6 || ecx == 11 || ecx == 16 || ecx
 			}
 		 }
 			if ( flag == 1 ) {
-				printk("ecx = %ld", ecx);
-				eax = total_cycle_counter[ecx];
-				ebx = 0;
-				ecx = 0;
-				edx = 0;
+			u64 curr_total_cycles = atomic64_read(&total_cycle_counter[ecx]);
+			ecx = (curr_total_cycles & 0x00000000ffffffff);
+			ebx = (curr_total_cycles & 0xffffffff00000000) >> 32;
+			edx = 0;
+			eax = 0;
+			printk("Total cpu cycles for exit %ld are %u", ecx, curr_total_cycles);
 			}
 			else {
 				eax = 0;

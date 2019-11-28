@@ -69,11 +69,11 @@ MODULE_LICENSE("GPL");
 //extern int total_exits;
 //extern u64 total_cycles;
 //extern u64 total_exit_counter[67];
-extern u64 total_cycle_counter[67];
+//extern u64 total_cycle_counter[67];
 
 
 extern atomic_t total_exit_counter[67];
-//extern atomic64_t total_cycle_counter[67];
+extern atomic64_t total_cycle_counter[67];
 extern atomic_t total_exits;
 extern atomic64_t total_cycles;
 
@@ -5994,8 +5994,8 @@ static int vmx_handle_exit(struct kvm_vcpu *vcpu)
 		//printk("Total exit in vmx=%u, exit count reason=%ld", total_exit_counter[exit_reason], exit_reason);
 		
 
-		total_cycle_counter[exit_reason] = total_cycle_counter[exit_reason] + this_exit_cycles;
-		//atomic_add(this_exit_cycles,total_cycle_counter[exit_reason]);
+		//total_cycle_counter[exit_reason] = total_cycle_counter[exit_reason] + this_exit_cycles;
+				atomic64_add(this_exit_cycles,&total_cycle_counter[exit_reason]);
 
 		return return_val;
 	}
